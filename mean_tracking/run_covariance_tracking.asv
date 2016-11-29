@@ -1,0 +1,14 @@
+N = 41;
+for i=1:N
+    filename = sprintf('input/left_camera_images/scene%03d.jpg', i);
+    Im(:,:,:,i) = uint8(imread(filename));
+end
+
+% postions to be tracked : 
+% [600 415 13 55]
+% [520 400 13 45]
+% [980 410 13 55]
+% 
+track_xy = [980 410];
+image(Im(:,:,:,1)),hold on
+rectangle('Position', [track_xy 13 55], 'EdgeColor', 'r', 'LineWidth', 1);
