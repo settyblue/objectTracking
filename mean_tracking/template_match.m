@@ -1,6 +1,6 @@
-function [best_match_point] = template_match(image, template, center_points) 
+function [best_match_point] = template_match(search_img, template, center_points) 
     [template_height, template_width, ~] = size(template);
-    [img_height, img_width, ~] = size(image);
+    [img_height, img_width, ~] = size(search_img);
     scores = zeros(size(center_points, 1), 1);
     for i=1:size(center_points, 1)
         center_x = center_points(i, 1);
@@ -12,8 +12,8 @@ function [best_match_point] = template_match(image, template, center_points)
         if right_x > img_width || bottom_y > img_height || left_x < 1 || top_y < 1
             scores(i) = Inf;
         else
-            matching_region = image(top_y:bottom_y, left_x:right_x, :);
-            scores(i) = sad_score(template, matching_region);
+            matching_region = search_img(top_y:bottom_y, left_x:right_x, :);
+            scores(i) = ssd_score(template, matching_region);
         end
     end
     matches = find(scores == min(scores));
