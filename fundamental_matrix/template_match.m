@@ -10,12 +10,15 @@ function [best_match_point] = template_match(image, template, center_points)
         top_y = center_y - floor(template_height/2) + 1;
         bottom_y = center_y + ceil(template_height/2);
         if right_x > img_width || bottom_y > img_height || left_x < 1 || top_y < 1
-            scores(i) = Inf;
+            scores(i) = -Inf;
         else
             matching_region = image(top_y:bottom_y, left_x:right_x, :);
-            scores(i) = sad_score(template, matching_region);
+            scores(i) = ncc_score(template, matching_region);
+        end
+        if center_x < 700 && center_y < 450
+            fprintf('(%d, %d) %g \n', center_x, center_y, scores(i));
         end
     end
-    matches = find(scores == min(scores));
+    matches = find(scores == max(scores));
     best_match_point = center_points(matches(1), :);
 end
