@@ -46,6 +46,8 @@ model_features = get_features(Im_left(:,:,:,1),tracking_object_position(1,2),tra
     tracking_object_position(1,2)+tracking_object_size(1,1)...
                 , tracking_object_position(1,1)+tracking_object_size(1,2));
 tracking_object_model = cov(model_features,1);
+first_frame_model = model_features;
+first_fram_cov = tracking_object_model;
 M = 40;
 for i=2:M
     fprintf('\n\nFrame number: %d\n', i);
@@ -75,6 +77,8 @@ for i=2:M
         tracking_object_position(1,2)+tracking_object_size(1,1)...
                     , tracking_object_position(1,1)+tracking_object_size(1,2));
         tracking_object_model = cov(model_features,1);
+    else
+        tracking_object_model = first_fram_cov;
     end
 %     if (intordouble == 0)
 %         figure,imagesc(Im_right(:,:,:,i)/255),hold on;title(sprintf('Frame %d', i));axis('image');

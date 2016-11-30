@@ -18,7 +18,7 @@ function [ distance_matrix, min_row, min_col, should_update_model ] = get_matchi
     [min_row, min_col] = ind2sub(size(distance_matrix), find(distance_matrix(:) == min(distance_matrix(:))));
     cov_dist = distance_matrix(min_row, min_col);
     should_update_model = 1;
-    if cov_dist >= 0.6 
+    if cov_dist >= 0.5
         should_update_model = 0;
     end
     fprintf('cov_distan: %g\n', cov_dist);
