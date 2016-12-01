@@ -2,6 +2,14 @@ clear;clc;close all;
 mkdir output;
 N = 41;
 intordouble = 0; 
+update_model = 0;
+update_template_size = 1;
+left_print_on = 0;
+right_print_on = 1;
+do_distance_correction = 1;
+depth = zeros(N,1);
+obj_position_left = zeros(N,2);
+obj_position_right = zeros(N,2);
 for i=1:N
     filename = sprintf('input/left_camera_images/scene%03d.jpg', i);
     %Im_left(:,:,:,i) = uint8(imread(filename));
@@ -34,14 +42,13 @@ fundamental_matrix = compute_fundamental_matrix(left_img_points, right_img_point
 % [370 385 13 55]
 tracking_object_position = [600 415];
 tracking_object_size = [55 13];
-if (intordouble == 0)
-    figure,imagesc(Im_left(:,:,:,1)/255),hold on
-else
-    figure,image(Im_left(:,:,:,1)),hold on
-end
-
-rectangle('Position', [tracking_object_position 13 55], 'EdgeColor', 'r', 'LineWidth', 1);
-hold off
+% if (intordouble == 0)
+%     figure,imagesc(Im_left(:,:,:,1)/255),hold on
+% else
+%     figure,image(Im_left(:,:,:,1)),hold on
+% end
+% rectangle('Position', [tracking_object_position tracking_object_size(1,2) tracking_object_size(1,1)], 'EdgeColor', 'r', 'LineWidth', 1);
+% hold off
 model_features = get_features(Im_left(:,:,:,1),tracking_object_position(1,2),tracking_object_position(1,1),...
     tracking_object_position(1,2)+tracking_object_size(1,1)...
                 , tracking_object_position(1,1)+tracking_object_size(1,2));
@@ -52,40 +59,60 @@ M = 40;
 for i=2:M
     fprintf('\n\nFrame number: %d\n', i);
     [~, min_row, min_col, should_update_model] = get_matching_patch(Im_left(:,:,:,i), tracking_object_size, tracking_object_model, tracking_object_position);
-    
-    if (intordouble == 0)
-        figure,imagesc(Im_left(:,:,:,i)/255),hold on;title(sprintf('Frame %d', i));
-    else
-        figure,image(Im_left(:,:,:,i)),hold on
+    if left_print_on == 1
+        if (intordouble == 0)
+            figure,imagesc(Im_left(:,:,:,i)/255),hold on;title(sprintf('Left Frame %d', i));axis('image');
+        else
+            figure,image(Im_left(:,:,:,i)),hold on
+        end
+        rectangle('Position', [min_col min_row tracking_object_size(1,2) tracking_object_size(1,1)], 'EdgeColor', 'r', 'LineWidth', 1);
+        hold off
     end
-    rectangle('Position', [min_col min_row 13 55], 'EdgeColor', 'r', 'LineWidth', 1);
-    hold off
     tracking_object_position = [min_col min_row];
     cent_x = min_col+tracking_object_size(1,2)/2;
     cent_y = min_row+tracking_object_size(1,1)/2;
-    [x_r, y_r, epipolar_lines] = find_corresponding_point(cent_x,cent_y,...
-        Im_left(:,:,:,i),Im_right(:,:,:,i),fundamental_matrix,tracking_object_size(1,2),tracking_object_size(1,1));
+    obj_position_left(i,:) = [cent_x cent_y] ;
+    if i == 2
+        [x_r, y_r, epipolar_lines] = find_corresponding_point(cent_x,cent_y,...
+            Im_left(:,:,:,i),Im_right(:,:,:,i),fundamental_matrix,tracking_object_size(1,2),tracking_object_size(1,1) ...
+            ,0, obj_position_right(i-1,:));
+    else
+        [x_r, y_r, epipolar_lines] = find_corresponding_point(cent_x,cent_y,...
+            Im_left(:,:,:,i),Im_right(:,:,:,i),fundamental_matrix,tracking_object_size(1,2),tracking_object_size(1,1) ...
+            ,do_distance_correction, obj_position_right(i-1,:));
+    end
     x_r = x_r - tracking_object_size(1,2)/2;
     y_r = y_r - tracking_object_size(1,1)/2;
+    obj_position_right(i,:) = [x_r y_r] ;
     % get the depth of the object
     % update the depth of the object tracked for this frame.
-    % get_depth(tracking_object_position, tracking_object_position_r, tracking_object_size);
-    % update tracking object size based on depth.
-    % update tracking object model based on depth.
-    if should_update_model == 1 
-        model_features = get_features(Im_left(:,:,:,i),tracking_object_position(1,2),tracking_object_position(1,1),...
-        tracking_object_position(1,2)+tracking_object_size(1,1)...
-                    , tracking_object_position(1,1)+tracking_object_size(1,2));
-        tracking_object_model = cov(model_features,1);
-    else
-        tracking_object_model = first_fram_cov;
+    depth(i,1) = get_depth(obj_position_left(i,:), obj_position_right(i,:), tracking_object_size, 512);
+    disp([i depth(i,1)])
+    if i > 2
+        height_diff = get_height_diff(depth(i-1,1), depth(i,1));
+        if update_template_size == 1 && height_diff > 0
+            height_diff
+        end
     end
-%     if (intordouble == 0)
-%         figure,imagesc(Im_right(:,:,:,i)/255),hold on;title(sprintf('Frame %d', i));axis('image');
-%     else
-%         figure,image(Im_right(:,:,:,i)),hold on;
-%     end
-% %     plot(epipolar_lines(:, 1), epipolar_lines(:, 2), 'b+');
-%     rectangle('Position', [x_r y_r 13 55], 'EdgeColor', 'r', 'LineWidth', 1);hold off;
-     save_current_frame(sprintf('output/left-frame%d.png', i));
+    % update tracking object size based on depth.
+    if update_model == 1
+        if should_update_model == 1 
+            model_features = get_features(Im_left(:,:,:,i),tracking_object_position(1,2),tracking_object_position(1,1),...
+            tracking_object_position(1,2)+tracking_object_size(1,1)...
+                        , tracking_object_position(1,1)+tracking_object_size(1,2));
+            tracking_object_model = cov(model_features,1);
+        else
+            tracking_object_model = first_fram_cov;
+        end
+    end
+    if right_print_on == 1
+        if (intordouble == 0)
+            figure,imagesc(Im_right(:,:,:,i)/255),hold on;title(sprintf('Right Frame %d', i));axis('image');
+        else
+            figure,image(Im_right(:,:,:,i)),hold on;
+        end
+    %     plot(epipolar_lines(:, 1), epipolar_lines(:, 2), 'b+');
+        rectangle('Position', [x_r y_r tracking_object_size(1,2) tracking_object_size(1,1)], 'EdgeColor', 'r', 'LineWidth', 1);hold off;
+        save_current_frame(sprintf('output/left-frame%d.png', i));
+    end
 end
