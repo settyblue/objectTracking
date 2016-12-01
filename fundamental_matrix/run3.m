@@ -1,14 +1,19 @@
 clc;clear;close all;
 
-left_img = double(imread('input/moto_camera_frames/moto_camera_00001.png'));
-right_img = double(imread('input/nexus_camera_frames/nexus_camera_00001.png'));
-left_img_points = [362.6324 181.6029 ; 501.1618 184.2500 ; 576.1618 157.3382 ; 379.3971 36.0147 ; 421.3088 84.9853 ; 323.8088 142.3382 ; 188.3676 138.8088 ; 10.1324 130.8676 ];
-right_img_points = [389.1029 184.6912; 515.2794 184.6912; 591.6029 158.6618; 409.8382 56.7500; 458.8088 96.8971; 361.7500 150.2794; 242.1912 148.0735; 89.1029 144.5441];
+left_img = double(imread('input/left_camera/object-frames/frame00006.png'));
+right_img = double(imread('input/right_camera/object-frames/frame00006.png'));
+
+left_camera_matrix = 1.0e+03 * [3.1342         0         0         0 ; 0    3.1079         0         0 ; 0.8164    0.3918    0.0010         0];
+right_camera_matrix = 1.0e+06 * [0.0020   -0.0001    0.0011    1.0010; -0.0001    0.0024    0.0003   -0.0237; 0.0011    0.0005    0.0007    0.5299];
+
+left_img_points = [243.8 249.9853; 304.7 207.6324; 360.3 705.2794; 1875.7 885.2794; 1330.4 23.6618; 437.0 739.6912; 1296.0 39.5441; 1253.7 197.0441];
+right_img_points = [484.7 132.1912 ; 528.4 101.7500 ; 598.5 486.8971 ; 1333.1 603.3676 ; 1273.5 19.6912 ; 667.3 509.3971 ; 1257.6 28.9559 ; 1243.1 126.8971 ];
+
 fundamental_matrix = compute_fundamental_matrix(left_img_points, right_img_points);
 figure;imagesc(left_img/255);axis('image');
 [x, y] = ginput(1);
-template_width = 21;
-template_height = 40;
+template_width = 50;
+template_height = 50;
 [match_x, match_y, points_on_line] = find_corresponding_point(x, y, left_img, right_img, fundamental_matrix, 21, 40);
 
 figure;imagesc(right_img/255);axis('image');hold on;plot(points_on_line(:, 1), points_on_line(:, 2), 'b+');hold off;
