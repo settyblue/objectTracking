@@ -2,10 +2,10 @@ clear;clc;close all;
 mkdir output;
 N = 41;
 intordouble = 0; 
-update_model = 0;
+update_model = 1;
 update_template_size = 1;
-left_print_on = 0;
-right_print_on = 1;
+left_print_on = 1;
+right_print_on = 0;
 do_distance_correction = 1;
 depth = zeros(N,1);
 obj_position_left = zeros(N,2);
@@ -66,6 +66,7 @@ for i=2:M
             figure,image(Im_left(:,:,:,i)),hold on
         end
         rectangle('Position', [min_col min_row tracking_object_size(1,2) tracking_object_size(1,1)], 'EdgeColor', 'r', 'LineWidth', 1);
+        save_current_frame(sprintf('output/left-frame%d.png', i));
         hold off
     end
     tracking_object_position = [min_col min_row];
@@ -87,13 +88,19 @@ for i=2:M
     % get the depth of the object
     % update the depth of the object tracked for this frame.
     depth(i,1) = get_depth(obj_position_left(i,:), obj_position_right(i,:), tracking_object_size, 512);
-    disp([i depth(i,1)])
+    disp([i depth(i,1)]);
     if i > 2
         height_diff = get_height_diff(depth(i-1,1), depth(i,1));
-        if update_template_size == 1 && height_diff > 0
-            height_diff
+        if update_template_size == 1 && height_diff > 0 
+            if(height_diff > 2)
+                height_diff = 2;
+            end
+            tracking_object_size(1,1) = tracking_object_size(1,1) + floor(height_diff)*3;
+            tracking_object_size(1,2) = tracking_object_size(1,2) + floor(height_diff)*1;
         end
+        disp([i height_diff tracking_object_size]);
     end
+    
     % update tracking object size based on depth.
     if update_model == 1
         if should_update_model == 1 
