@@ -8,7 +8,8 @@ function [ depth ] = get_depth( tracking_position, tracking_object_position_r, t
     xr =  tracking_object_position_r(1,1) - middle_column;
     k = 1000.0;
     offset = 35;
-    simple_depth = k/(xl-xr)+ offset;
+    lambda = 200;
+    simple_depth = k/(xl-xr+lambda)+ offset;
     depth = simple_depth;
     
 %     theta = 80;
